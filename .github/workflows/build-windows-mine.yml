@@ -11,13 +11,23 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.0
+          components: rustfmt, clippy
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --locked --lib
 
       - name: Build
         run: cargo build --locked --release
@@ -25,10 +35,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: zapfast-main-windows-x64
+          name: zapfast-media-folders
           path: target/release/zapfast.exe
-
-      - name: Publish release asset
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "build-${{ github.run_number }}" "target/release/zapfast.exe" --title "zapfast main build ${{ github.run_number }}" --notes "commit ${{ github.sha }}"
